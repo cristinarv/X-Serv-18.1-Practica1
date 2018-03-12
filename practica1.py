@@ -1,33 +1,49 @@
 #!/usr/bin/python3
+# Cristina del Río Vergel
+# Práctica 1 (Ejercicio 18.1): Web acortadora de URLs
+
+
 import webapp
-class webApp (webapp.webApp):
-    tightUrls = {}
-    completlyUrls = {}
+from urllib.parse import unquote
+
+
+class AcortarUrls (webapp.webApp):
+
+    urls_orig = {}  # Diccionario para poder guardar urls originales
+    urls_cortas = {}  # Diccionario para poder guardar urls acortadas
+
     def parse(self, request):
-        return (request.split(' ', 1)[0], 
-				request.split(' ', 2)[1],
-				request.split('=')[-1])
-	
+        return(request.split(' ', 1)[0],
+               request.split(' ', 2)[1],
+               request.split('=')[-1])
+
     def process(self, parsedRequest):
-        method, recurso, information = parsedRequest 
-        self.contador = len(self.completlyUrls)
-        if method =="GET":
-            if recurso =="/":
-                returnCode = "HTTP/1.1 200 OK"
-                htmlAnswer = ("<html><body>" + "<form method = 'POST'>" + "La URL que se quiere acortar es: " + "<input type='text' name='url'><br>" +
-                              "<input type='submit' value='Acorta la url'></form>" + str(self.tightUrls) + "</body></html>")
+        metodo, recurso, body = parsedRequest
+        self.urlsCont = len(self.urls_orig)
+        if metodo == "GET":
+            if recurso == "/":
+                return("200 OK", "<html><body>" +
+                       """<form action="" method="POST">
+                       Introduce una url para acortarla:
+                       <input type="text" name="url">
+                       <input type="submit" value="Enviar">
+                       </form>""" + "Las URLs acortadas que tengo son: " +
+                       str(self.urls_cortas) + "</body></html>")
             else:
                 recurso = int(recurso[1:])
-                if recurso in self.tightUrls:
-                    returnCode = "HTTP/1.1 302 Found"
-                    htmlAnswer = ("<html><body><meta http-equiv='refresh'" + "information='1 url=" +
-                                self.tightUrls[recurso] + "'>" + "</p>" + "</body></html>")
+                if recurso in self.urls_cortas:
+                    return("302 Redirect",
+                           "<html><head><meta http-equiv='Refresh'" +
+                           "content= 4;url=" + self.urls_cortas[recurso] +
+                           "/></head" + "<body>Se esta redirigiendo a " +
+                           self.urls_cortas[recurso] +
+                           "></p></body></html>")
                 else:
-                    returnCode = "HTTP/1.1 404 Not Found"
-                    htmlAnswer = ("<html><body>" +
-                                  "recurso Not FoundR</body></html>"
-        if metodo =="POST":
-            if body == "":  # Es un formulario vacio
+                    return("404 Not Found",
+                           "<html><body><h1>Resource not Found" +
+                           "</h1></body></html>")
+        elif metodo == "POST":
+            if body == "":  # Si no hay nada
                 return("404 Not Found",
                        "<html><body><h1>Formulario vacio, meta una url" +
                        "</h1></body></html>")
@@ -37,23 +53,28 @@ class webApp (webapp.webApp):
                     body = unquote(body)
                 else:
                     body = "http://" + body  # Ponemos una cabecera
-                if body in self.urls_orig:
-                    url_corta = ("http://localhost:1234/" +
-                                 str(self.urls_orig[body]))
-                    return("200 Ok", "<html><body>La url_corta es:6666666666 " +
-                           "<a href=" + url_corta + ">" + url_corta +
-                           "</a>" + "</body></html>")
-                else:
+                if body in self.urls_orig:  # Cuando la url ya existe
+                    url = ("http://localhost:1234/" +
+                           str(self.urls_orig[body]))
+                    return("200 Ok",
+                           "<html><body>La url acortada que tengo es: " +
+                           "<a href=" + url + ">" + url +
+                           "</a><br/>La url original que tengo es: <a href=" +
+                           body + ">" + body +
+                           "</a></body></html>")
+                else:  # Cuando la url es nueva
                     self.urls_orig[body] = self.urlsCont
-                    enlace = "http://localhost:1234/" + str(self.urlsCont)
+                    url = "http://localhost:1234/" + str(self.urlsCont)
                     self.urls_cortas[self.urlsCont] = body
                     self.urlsCont = self.urlsCont + 1
-                    return("HTTP/1.1 200 Ok", "<html><body>" +
-                           "<a href=" + enlace + ">" +
-                           enlace + "</a>" + "</body></html>")
+                    return("200 Ok", "<html><body>" +
+                           "<a href=" + url + ">" +
+                           url + "</a>" + "</body></html>")
         else:
-            returnCode = "HTTP/1.1 405 Method Not Allowed"
-            htmlAnswer = "Method Not Allowed"
-        
+            return("405 Method Not Allowed", "<html><body><h1>" +
+                   "Error: Este metodo no es GET ni POST</h1></body></html>")
 if __name__ == "__main__":
-    testWebApp = webApp("localhost", 1234)
+    try:
+        testWebApp = AcortarUrls("localhost", 1234)
+    except KeyboardInterrupt:
+        print("Closing binded socket")
