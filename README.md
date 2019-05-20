@@ -95,3 +95,13 @@ pasándole como parámetro tu nombre de usuario en GitHub. Así, un ejemplo de
 ejecución sería:
 
 $ python check.py gregoriorobles
+
+
+
+
+
+En el terminal escribes:
+python3 practica1.py cristinarv
+
+En el navegador escribes:
+http://localhost:1234/
